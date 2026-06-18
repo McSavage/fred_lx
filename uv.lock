@@ -442,7 +442,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fred"
+name = "fred-lx"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

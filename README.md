@@ -1,4 +1,4 @@
-# fred
+# FRED_LX
 
 Jupyter notebooks for analyzing economic data from FRED (Federal Reserve Economic Data) and the US Treasury.
 
@@ -11,7 +11,7 @@ Jupyter notebooks for analyzing economic data from FRED (Federal Reserve Economi
 
 ```bash
 uv sync
-cp .env.example .env  # then add your FRED API key
+echo "FRED_API_KEY=your_key_here" > .env
 ```
 
 Get a free FRED API key at <https://research.stlouisfed.org/useraccount/apikey>.
