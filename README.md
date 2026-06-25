@@ -1,5 +1,17 @@
 # FRED_LX
 
+A FRED / US Treasury Par Yield Curve data study leading to PCA analysis on the
+curve. I took José Scheinkman's course at the University of Chicago Graduate
+School of Business; my intention is to break out the useful parts as a study
+on the 1991 Litterman-Scheinkman paper, *Common Factors Affecting Bond
+Returns*:
+
+> Litterman, R., & Scheinkman, J. (1991). Common Factors Affecting Bond
+> Returns. *The Journal of Fixed Income*, 1(1), 54–61.
+> https://doi.org/10.3905/jfi.1991.692347
+>
+> [PDF photostat](https://math.nyu.edu/inmemoriam/avellaneda//Litterman1991.pdf)
+
 Tools for analyzing economic data from FRED (Federal Reserve Economic Data) and the US Treasury.
 
 Ingestion, curve math, storage, PCA, and plotting live in the importable
