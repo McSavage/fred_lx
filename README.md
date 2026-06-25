@@ -2,15 +2,27 @@
 
 A FRED / US Treasury Par Yield Curve data study leading to PCA analysis on the
 curve. I took José Scheinkman's course at the University of Chicago Graduate
-School of Business; my intention is to break out the useful parts as a study
-on the 1991 Litterman-Scheinkman paper, *Common Factors Affecting Bond
-Returns*:
+School of Business in 1991, where I believe we read the paper. I later
+recognized the method in a 1997 paper by Jon Frye of NationsBank-CRT, in
+which he implements a version of the analysis for hedging a swaptions book
+at Bank of America.
+
+My intention is to break out the useful parts as a study on the 1991
+Litterman-Scheinkman paper, *Common Factors Affecting Bond Returns*:
 
 > Litterman, R., & Scheinkman, J. (1991). Common Factors Affecting Bond
 > Returns. *The Journal of Fixed Income*, 1(1), 54–61.
 > https://doi.org/10.3905/jfi.1991.692347
 >
 > [PDF photostat](https://math.nyu.edu/inmemoriam/avellaneda//Litterman1991.pdf)
+
+And the related:
+
+> Frye, J. (1997). Principals of Risk: Finding Value-at-Risk Through
+> Factor-Based Interest Rate Scenarios. In *VAR: Understanding and Applying
+> Value-at-Risk*. Risk Publications.
+>
+> [PDF](https://ani.stat.fsu.edu/~jfrade/HOMEWORKS/STA5707/STA5707-fall07/files/project/pdf_files/Principals_of_Risk-IMPO.pdf)
 
 Tools for analyzing economic data from FRED (Federal Reserve Economic Data) and the US Treasury.
 
