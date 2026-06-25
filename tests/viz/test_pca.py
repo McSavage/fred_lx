@@ -23,6 +23,14 @@ def result() -> PCAResult:
             {"PC1": [0.1, -0.2, 0.3, 0.0, -0.1], "PC2": [0.0, 0.1, -0.1, 0.2, 0.0]},
             index=dates,
         ),
+        variance_table=pd.DataFrame(
+            {
+                "total_explained_pct": [95.0, 96.0, 97.0, 98.0],
+                "PC1": [80.0, 82.0, 84.0, 86.0],
+                "PC2": [20.0, 18.0, 16.0, 14.0],
+            },
+            index=pd.Index([1.0, 2.0, 5.0, 10.0], name="maturity_years"),
+        ),
     )
 
 

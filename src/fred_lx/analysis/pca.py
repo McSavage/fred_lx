@@ -26,15 +26,22 @@ class PCAResult:
         explained_variance_ratio: Fraction of total variance in yield
             changes explained by each component, shape ``(n_components,)``.
         scores: Factor time series, index = date, columns ``PC1..PCn``.
+        variance_table: Per-maturity variance decomposition, as in
+            Litterman & Scheinkman (1991) Table 2. Index = maturity_years,
+            columns ``total_explained_pct`` (share of that maturity's own
+            variance explained by the kept components) and ``PC1..PCn``
+            (share of *that explained variance* attributable to each
+            component; the PC columns sum to 100 per row).
     """
 
     maturities: np.ndarray
     components: np.ndarray
     explained_variance_ratio: np.ndarray
     scores: pd.DataFrame
+    variance_table: pd.DataFrame
 
 
-def fit_yield_pca(history: pd.DataFrame, n_components: int = 3) -> PCAResult:
+def fit_yield_pca(history: pd.DataFrame, n_components: int = 3, c_start: int = 0) -> PCAResult:
     """Fit PCA factors to historical yield curve changes.
 
     Args:
@@ -52,6 +59,7 @@ def fit_yield_pca(history: pd.DataFrame, n_components: int = 3) -> PCAResult:
         index="date", columns="maturity_years", values="par_yield"
     ).sort_index(axis=1)
     wide = wide.dropna(axis=0, how="any")
+    wide = wide.iloc[:, c_start:]  # option drop the first columns based on c_start
 
     diffs = wide.diff().dropna(axis=0, how="any")
     mean = diffs.mean(axis=0)
@@ -77,9 +85,24 @@ def fit_yield_pca(history: pd.DataFrame, n_components: int = 3) -> PCAResult:
         columns=[f"PC{i + 1}" for i in range(n_components)],
     )
 
+    # Litterman-Scheinkman Table 2: per-maturity variance explained by each
+    # kept component, as a share of that maturity's own variance.
+    eigenvalues = variance[:n_components]
+    factor_variance = eigenvalues[:, np.newaxis] * components**2
+    total_explained = factor_variance.sum(axis=0)
+    total_variance = centered.var(axis=0, ddof=1).to_numpy()
+
+    variance_table = pd.DataFrame(
+        (factor_variance / total_explained * 100).T,
+        index=pd.Index(wide.columns, name="maturity_years"),
+        columns=[f"PC{i + 1}" for i in range(n_components)],
+    )
+    variance_table.insert(0, "total_explained_pct", total_explained / total_variance * 100)
+
     return PCAResult(
         maturities=wide.columns.to_numpy(dtype=float),
         components=components,
         explained_variance_ratio=explained_variance_ratio,
         scores=scores_df,
+        variance_table=variance_table,
     )

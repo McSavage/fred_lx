@@ -1,11 +1,17 @@
 # FRED_LX
 
-Jupyter notebooks for analyzing economic data from FRED (Federal Reserve Economic Data) and the US Treasury.
+Tools for analyzing economic data from FRED (Federal Reserve Economic Data) and the US Treasury.
+
+Ingestion, curve math, storage, PCA, and plotting live in the importable
+`fred_lx` package (`src/fred_lx/`); notebooks are thin orchestration/reporting
+layers on top of it. See [docs/refactor-plan.md](docs/refactor-plan.md) for the
+package design and migration history.
 
 ## Contents
 
 - [YieldCurve/YieldCurve.ipynb](YieldCurve/YieldCurve.ipynb) - Yield curve analysis using the FRED API
 - [YieldCurve/DailyTreasuryParYieldCurve.ipynb](YieldCurve/DailyTreasuryParYieldCurve.ipynb) - Daily Treasury par yield curve from the Treasury XML feed
+- [PCA/YieldCurvePCA.ipynb](PCA/YieldCurvePCA.ipynb) - Litterman-Scheinkman PCA (level/slope/curvature) on yield curve history
 
 ## Getting started
 

@@ -1,5 +1,29 @@
 # Refactor Plan: `fred-lx` Yield Curve Module
 
+## 0. Status (as of 2026-06-23)
+
+Sections 1-8 below are the original design; most of it has since shipped.
+Quick read on where things actually stand:
+
+- **Done:** `ingestion/treasury_xml.py`, `curves/{par_curve,bootstrap,forwards}.py`,
+  `storage/{postgres_store,duckdb_store,schema.sql}`, `viz/{curves,forwards,pca}.py`,
+  `analysis/pca.py` — all built, tested, and wired into thinned notebooks.
+  `curves.bootstrap` uses QuantLib's `PiecewiseLogCubicDiscount` as planned in
+  Section 6. `analysis.pca.fit_yield_pca` fits on day-over-day yield changes
+  (Litterman-Scheinkman convention) and now also returns a per-maturity
+  variance decomposition (their Table 2), not just `explained_variance_ratio`.
+- **Deliberately not built:** `ingestion/fred_api.py`. The project moved off
+  FRED to Treasury XML as the sole ingestion path, so there's no second feed
+  to maintain — `YieldCurve.ipynb` (FRED-based) stays only as a kept-for-history
+  proof of concept, not something to migrate.
+- **Deferred, not abandoned:** `analysis/risk.py` (VaR / scenario shocks from
+  Section 8). Scoped out of the initial PCA work; revisit if/when risk
+  simulation becomes the active project.
+- **Next planned move:** once PCA work here is "finished," split this repo
+  into a stripped-down data-core project (ingestion/curves/storage) plus a
+  separate PCA showcase project for a portfolio piece. Whether `analysis/pca.py`
+  ends up in the core repo or the showcase repo is still undecided.
+
 ## 1. Current State
 
 `YieldCurve/DailyTreasuryParYieldCurve.ipynb` is a single 10-cell notebook that fetches
@@ -64,6 +88,7 @@ src/fred_lx/
     __init__.py
     treasury_xml.py       # fetch_treasury_xml(year) -> str; parse_par_yields(xml) -> DataFrame
     fred_api.py            # fetch_fred_series(series_id, start, end) -> DataFrame
+                            # NOT BUILT — deliberately dropped, see Section 0
   curves/
     __init__.py
     par_curve.py            # ParYieldCurve dataclass: date, maturities[], par_yields[]
@@ -78,6 +103,7 @@ src/fred_lx/
     __init__.py
     pca.py                       # fit_yield_pca(history_df, n_components) -> PCAResult
     risk.py                       # historical_var(...), pca_scenario_shock(...)
+                                   # DEFERRED — not started, see Section 0
   viz/
     __init__.py
     curves.py                      # plot_yield_curves(curve, zero_curve=None)
@@ -133,14 +159,14 @@ rather than duplicating storage:
 | Module | Responsibility | Pure/testable without network? |
 |---|---|---|
 | `ingestion.treasury_xml` | HTTP fetch + XML→DataFrame parsing | parse step: yes (fixture-driven) |
-| `ingestion.fred_api` | HTTP fetch + JSON→DataFrame parsing | parse step: yes |
+| `ingestion.fred_api` | HTTP fetch + JSON→DataFrame parsing — **not built**, dropped (Section 0) | parse step: yes |
 | `curves.par_curve` | Typed representation of one day's curve | yes |
 | `curves.bootstrap` | Par yields → zero-coupon yields (QuantLib) | yes |
 | `curves.forwards` | Zero-coupon yields → forward rates | yes |
 | `storage.postgres_store` | Upsert + historical read from Postgres | needs a DB, but mockable |
 | `storage.duckdb_store` | Attach to Postgres, run analytical SQL | needs a DB |
 | `analysis.pca` | PCA decomposition of yield curve history (level/slope/curvature factors) | yes, given a DataFrame |
-| `analysis.risk` | Scenario shocks / VaR using PCA factors or historical moves | yes, given a DataFrame |
+| `analysis.risk` | Scenario shocks / VaR using PCA factors or historical moves — **deferred** (Section 0) | yes, given a DataFrame |
 | `viz.curves` / `viz.forwards` | Plotting, takes well-typed inputs (no magic strings beyond the domain types) | n/a (visual) |
 
 `curves.bootstrap` is the one piece worth re-implementing rather than lifting
@@ -185,7 +211,7 @@ Because history now lives in Postgres (queryable from DuckDB), a future
 ```python
 from fred_lx.storage.duckdb_store import attach_postgres
 from fred_lx.analysis.pca import fit_yield_pca
-from fred_lx.analysis.risk import historical_var
+from fred_lx.analysis.risk import historical_var  # not built yet, see Section 0
 
 con = attach_postgres()
 history = con.sql("""
@@ -198,31 +224,33 @@ pca_result = fit_yield_pca(history, n_components=3)   # level/slope/curvature
 var_99 = historical_var(history, confidence=0.99, horizon_days=10)
 ```
 
+`PCA/YieldCurvePCA.ipynb` now exists and matches this shape (with `fit_yield_pca`
+also returning a Litterman-Scheinkman Table 2-style per-maturity variance
+decomposition). `Risk/HistoricalVaR.ipynb` and `analysis/risk.py` remain
+unbuilt — deferred per Section 0.
+
 No re-implementation of fetch/parse/store plumbing — both new projects sit on top
 of the same `fred_lx` package and the same Postgres table.
 
 ## 9. Migration Plan (Phased)
 
-1. **Extract pure functions first.** Move `parse_xml_data`,
-   `calculate_zero_coupon_yields`, `calculate_forward_rates` logic into
-   `curves/bootstrap.py` and `curves/forwards.py`, write unit tests against a
-   captured XML fixture, *before* touching storage. Confirms the math survives
-   the move unchanged.
-2. **Add `ingestion/treasury_xml.py`** wrapping the HTTP fetch, separated from
-   parsing.
-3. **Stand up Postgres schema** (`storage/schema.sql`) and `postgres_store.py`
-   with upsert + read functions. Backfill by running the notebook for the
-   current year once.
-4. **Swap the bootstrap implementation to QuantLib** once the pure-Python version
-   has tests to compare against (regression-check old vs. new output on the same
-   fixture before deleting the old code).
-5. **Add `duckdb_store.py`** attach helper once there's enough Postgres history to
-   make analytical queries interesting.
-6. **Rewrite the two notebooks** to import from `fred_lx` and drop to the thin
-   form in Section 7.
-7. **Add `analysis/pca.py` and `analysis/risk.py`** as the first consumers of the
-   historical store, likely in new notebooks under new `PCA/` and `Risk/`
-   directories alongside `YieldCurve/`.
+1. **Done.** Extracted pure functions: `parse_xml_data`,
+   `calculate_zero_coupon_yields`, `calculate_forward_rates` logic moved into
+   `curves/bootstrap.py` and `curves/forwards.py`, with unit tests against a
+   captured XML fixture.
+2. **Done.** Added `ingestion/treasury_xml.py` wrapping the HTTP fetch,
+   separated from parsing.
+3. **Done.** Stood up Postgres schema (`storage/schema.sql`) and
+   `postgres_store.py` with upsert + read functions. Backfilled continuous
+   Treasury par-yield history from 2025-01-02 onward.
+4. **Done.** Bootstrap swapped to QuantLib's `PiecewiseLogCubicDiscount`.
+5. **Done.** Added `duckdb_store.py` attach helper.
+6. **Done.** Both notebooks rewritten to import from `fred_lx` and use the
+   thin form in Section 7 (`YieldCurve.ipynb` intentionally kept as a
+   FRED-based proof-of-concept, not migrated further — see Section 0).
+7. **Partially done.** `analysis/pca.py` is built, tested, and backing
+   `PCA/YieldCurvePCA.ipynb`. `analysis/risk.py` and a `Risk/` notebook are
+   deferred, not started.
 
 ## 10. Testing Strategy
 
