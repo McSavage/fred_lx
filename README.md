@@ -1,12 +1,18 @@
 # FRED_LX
 
 A FRED / US Treasury Par Yield Curve data study leading to PCA analysis on the
-curve. I took José Scheinkman's course at the University of Chicago Graduate
-School of Business in 1991, where I believe we read the paper. I later
-recognized the method in a 1997 paper by Jon Frye of NationsBank-CRT — a
-practitioner-focused guide for bank trading desks. Later in my career, we
-implemented a version of the analysis for hedging a swaptions book at
-Bank of America.
+curve.
+
+I took José Scheinkman's course at the University of Chicago Graduate School
+of Business in 1991, where I believe we read the paper "Common Factors
+Affecting Bond Returns" listed below. Later, working in risk management, I
+recognized the method in the 1997 paper "Principals of Risk" listed below by
+Jon Frye of NationsBank-CRT — a practitioner-focused guide for bank trading
+desks. Later in my career, we implemented a version of the analysis for
+hedging a swaptions book at Bank of America.
+
+Litterman-Scheinkman look at a zero curve bootstrapped from treasuries; Frye
+looks at the Par Treasury Curve. This analysis uses the Par Treasury Curve.
 
 My intention is to break out the useful parts as a study on the 1991
 Litterman-Scheinkman paper, *Common Factors Affecting Bond Returns*:
